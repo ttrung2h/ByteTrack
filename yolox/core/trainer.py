@@ -213,7 +213,7 @@ class Trainer:
         if (self.epoch + 1) % self.exp.eval_interval == 0:
             all_reduce_norm(self.model)
             self.evaluate_and_save_model()
-        shutil.copy('YOLOX_outputs/yolox_nano_mix_det/latest_ckpt.pth.tar','weight/latest_ckpt.pth_yolo_nano_'+str(self.epoch)+'.tar')
+        shutil.copy('YOLOX_outputs/yolox_tiny_mix_det/latest_ckpt.pth.tar','weight/latest_ckpt.pth_yolo_tiny_'+str(self.epoch)+'.tar')
     def before_iter(self):
         pass
 
