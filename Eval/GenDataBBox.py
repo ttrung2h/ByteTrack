@@ -16,10 +16,11 @@ from yolox.tracker.byte_tracker import BYTETracker
 from yolox.tracking_utils.timer import Timer
 from natsort import natsorted
 import json
-
 device = torch.device("cuda")
-ckpt_file = '/media/anlabadmin/data_ubuntu/yolox/Weight/Weight_yolox_s/weight/latest_ckpt.pth_yolo_s_9.tar'
-exp_file = '/media/anlabadmin/data_ubuntu/yolox/ByteTrack/exps/example/mot/yolox_s_mix_det.py'
+
+
+ckpt_file = '/media/anlabadmin/data_ubuntu/yolox/Weight/Weight10epochs/latest_ckpt.pth_yolo_x_9.tar'
+exp_file = '/media/anlabadmin/data_ubuntu/yolox/ByteTrack/exps/example/mot/yolox_x_mix_mot20_ch.py'
 exp = get_exp(exp_file, None)
 model = exp.get_model().to(device)
 logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
@@ -57,41 +58,48 @@ def predictBBox(pathImg,foldersave):
             outputs, exp.num_classes, exp.test_conf, exp.nmsthre
         )
     outputs = outputs[0]
-    if outputs.shape[1] == 5:
-        scores = outputs[:, 4]
-        bboxes = outputs[:, :4]
-    else:
-        output_results = outputs.cpu().numpy()
-        scores = output_results[:, 4] * output_results[:, 5]
-        bboxes = output_results[:, :4]  # x1y1x2y2
-    scale = min(test_size[0] / float(height), test_size[1] / float(width))
-    bboxes /= scale
-    results = []
-    for i in range(len(scores)):
-        if scores[i]>=0.5:
-            x1,x2,w,h = coco_to_yolo(bboxes[i][0],bboxes[i][1], bboxes[i][2]-bboxes[i][0], bboxes[i][3]-bboxes[i][1], width, height)
-            results.append(f"{osp.basename(pathImg)[:-4]} {scores[i]:.2f} {bboxes[i][0]} {bboxes[i][1]} {bboxes[i][2]} {bboxes[i][3]}\n")
     
-    with open(os.path.join(foldersave,osp.basename(pathImg).split('.')[0]+'.txt'), 'w') as f:
-        f.writelines(results)  
+    # set up for outputs[0] is None
+    results = []
+
+
+    if outputs != None:
+        if outputs.shape[1] == 5:
+            scores = outputs[:, 4]
+            bboxes = outputs[:, :4]
+        else:
+            output_results = outputs.cpu().numpy()
+            scores = output_results[:, 4] * output_results[:, 5]
+            bboxes = output_results[:, :4]  # x1y1x2y2
+        scale = min(test_size[0] / float(height), test_size[1] / float(width))
+        bboxes /= scale
+        for i in range(len(scores)):
+            if scores[i]>=0.5:
+                x1,x2,w,h = coco_to_yolo(bboxes[i][0],bboxes[i][1], bboxes[i][2]-bboxes[i][0], bboxes[i][3]-bboxes[i][1], width, height)
+                results.append(f"{osp.basename(pathImg)[:-4]} {scores[i]:.2f} {bboxes[i][0]} {bboxes[i][1]} {bboxes[i][2]} {bboxes[i][3]}\n")
+        
+        with open(os.path.join(foldersave,osp.basename(pathImg).split('.')[0]+'.txt'), 'w') as f:
+            f.writelines(results)  
     return results
 
 
 # camera = 'ch08'
-# camera_list = ["ch02","ch03","ch04","ch06","ch07","ch08"]
-camera_list = ["soft_hard_yolox_s_weight_4_cof_05"]
+camera_list = ["ch04"]
+# camera_list = ["hard_yolox_nano_weight_base"]
 for camera in camera_list:
     print(f"====================={camera}==========================")
     # set up folder contain result
-    os.mkdir('/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera)
-    folder_result = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera+'/LabelPredict_'
+    os.mkdir('/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera)
+    folder_result = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera+'/LabelPredict_'
     basename = os.path.basename(ckpt_file).split('.tar')[0]
     save_image_predict_folder = folder_result+basename
+    
+    
     os.mkdir(save_image_predict_folder)
     print(basename)
 
 
-    image_folder = "/media/anlabadmin/data_ubuntu/yolox/Val_images/Image_soft_hard_loaichenguoi/Images"
+    image_folder = f"/media/anlabadmin/data_ubuntu/yolox/Frames_one_minute/{camera}"
     # image_folder = "/media/anlab/800gb/trungnh/save_frame/1400_frames/"+camera
 
 
@@ -104,7 +112,7 @@ for camera in camera_list:
         results+=tmp
 
 
-    save_file_result_gen = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera+'/ResultGen_'+basename+'.txt'
+    save_file_result_gen = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera+'/ResultGen_'+basename+'.txt'
     with open(os.path.join(save_file_result_gen), 'w') as f:
         f.writelines(results)  
 
@@ -112,7 +120,7 @@ for camera in camera_list:
     for filename in natsorted(os.listdir(image_folder)):
         listFilename.append(filename[:-4]+'\n')
 
-    with open(os.path.join('/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera+'/listFilename_'+basename+'.txt'), 'w') as f:
+    with open(os.path.join('/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera+'/listFilename_'+basename+'.txt'), 'w') as f:
         f.writelines(listFilename)  
     print(f"=====================Done {camera}==========================")
     

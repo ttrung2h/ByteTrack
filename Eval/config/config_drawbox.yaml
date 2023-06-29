@@ -1,0 +1,8 @@
+Image folder:
+  - /media/anlab/800gb/trungnh/save_frame/ch03
+Annotation folder: 
+  - /media/anlab/800gb/trungnh/many_people_1400f_annot_pascal_voc/ch03/Annotations
+Predict Annotation:
+  - /media/anlab/800gb/trungnh/result_detection/1400Frames_weight5.4/ch03/LabelPredict_latest_ckpt.pth_new_5_4/ch03
+Save drawbox folder :
+  - /media/anlab/800gb/trungnh/result_detection/1400Frames_weight5.4/save_draw/ch03

@@ -41,20 +41,6 @@ def voc_ap(rec, prec, use_07_metric=False):
 
         # and sum (\Delta recall) * prec
         ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
-        # Append sentinel values at the end
-        # prec = [0.0] + prec + [0.0]
-        # rec = [0.0] + rec + [1.0]
-
-        # # Compute the precision envelope
-        # for i in range(len(prec) - 2, -1, -1):
-        #     prec[i] = max(prec[i], prec[i+1])
-
-        # # Find indices where recall changes value
-        # indices = [i for i in range(1, len(rec)) if rec[i] != rec[i-1]]
-
-        # # Compute AP as the sum of (delta recall) * precision
-        # ap = sum((rec[indices[i]] - rec[indices[i-1]]) * prec[indices[i]] for i in range(1, len(indices)))
-
     return ap
 def parse_rec(filename):
     """Parse a PASCAL VOC xml file"""
@@ -195,8 +181,6 @@ def voc_eval(
             overlaps = inters / uni
             ovmax = np.max(overlaps)
             jmax = np.argmax(overlaps)
-    # print(ovmax)
-    # exit()
         if ovmax > ovthresh:
             if not R["difficult"][jmax]:
                 if not R["det"][jmax]:
@@ -232,12 +216,9 @@ def voc_eval(
     return rec, prec, ap, tp, fp,TP,FP,FN,sum_GT,fp_list_images
 
 
-
-
-    
-
-
 def move_fp_images(list_fp_images,base_name,image_draw_fodel):
+    "Moving images containg false positive cases"
+    
     new_folder = f"/media/anlab/800gb/trungnh/Fp_softhard_images/fp_images_{base_name}"
     os.mkdir(new_folder)
 
@@ -249,25 +230,23 @@ def move_fp_images(list_fp_images,base_name,image_draw_fodel):
 
 
 
-# camera_list = ["ch06","ch07","ch08"]
-camera_list = ["soft_hard_yolox_s_weight_9_cof_05"]
-# image_draw_folder = "/media/anlab/800gb/trungnh/Draw/soft_hard_data_69_05"
+camera_list = ["ch02","ch03","ch04","ch06","ch07","ch08"]
+# camera_list = ["ch04"]
 
 
-ckpt_file = "/media/anlabadmin/data_ubuntu/yolox/Weight/Weight_yolox_s/weight/latest_ckpt.pth_yolo_s_9.tar"
+ckpt_file = "/media/anlabadmin/data_ubuntu/yolox/Weight/Weight10epochs/latest_ckpt.pth_yolo_x_9.tar"
 basename = os.path.basename(ckpt_file).split('.tar')[0] 
 
 for camera in camera_list:
     print(f"====================={camera}==========================")
-    detpath = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera+'/ResultGen_'+basename+'.txt'
-    annopath = '/media/anlabadmin/data_ubuntu/yolox/Val_images/Image_soft_hard_loaichenguoi/Annotations/{:s}.xml'
-    imagesetfile = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera+'/listFilename_'+basename+'.txt'
+    detpath = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera+'/ResultGen_'+basename+'.txt'
+    annopath = '/media/anlabadmin/data_ubuntu/yolox/many_people_fullano1minute/'+camera+'/Annotations/{:s}.xml'
+    imagesetfile = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera+'/listFilename_'+basename+'.txt'
     classname = 'Human'
-    cachedir = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+camera+'/tmp'
+    cachedir = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+camera+'/tmp'
 
     # ovthresh = 0.1
-    use_07_metric = True
-    result_file = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/'+f'{camera}/result_map_{basename}.txt' 
+    result_file = '/media/anlabadmin/data_ubuntu/yolox/Result_detection/model_x_10epochs_1800frames/'+f'{camera}/result_map_{basename}.txt' 
     average = 0 
     with open(detpath,'r') as f:
         num_box_predict = len(f.readlines())
@@ -280,8 +259,7 @@ for camera in camera_list:
                 imagesetfile,
                 classname,
                 cachedir,
-                ovthresh,
-                use_07_metric
+                ovthresh
             )
 
         

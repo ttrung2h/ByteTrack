@@ -6,7 +6,8 @@ import cv2
 import torch
 
 from loguru import logger
-
+import sys
+sys.path.append(".")
 from yolox.data.data_augment import preproc
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
@@ -87,6 +88,15 @@ def make_parser():
     )
     parser.add_argument('--min_box_area', type=float, default=10, help='filter out tiny boxes')
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
+    
+
+    parser.add_argument(
+        "--metric_detection",
+        default=None,
+        type=str,
+        help="File to save result detection",
+    )
+    
     return parser
 
 
@@ -175,6 +185,40 @@ class Predictor(object):
         return outputs, img_info
 
 
+
+def write_result_detection_per_frame(outputs,filess,img_path,args):
+    
+    fodel_save_result_detection = args.metric_detection
+    
+    # get base name of model
+    base_name_model = os.path.basename(args.ckpt).replace(".tar","")    
+    
+    
+    # write result for eval
+    height,width = cv2.imread(img_path).shape[:2]
+    with open(f"{fodel_save_result_detection}/result_{base_name_model}.txt","a") as f:
+        dets = outputs[0]
+        image_name = img_path.split("/")[-1].split(".")[0]
+        if dets.shape[1] == 5:
+            scores = dets[:, 4]
+            bboxes = dets[:, :4]
+        else:
+            output_results = dets.cpu().numpy()
+            scores = output_results[:, 4] * output_results[:, 5]
+            bboxes = output_results[:, :4]  # x1y1x2y2
+
+        scale = min(exp.test_size[0] / float(height), exp.test_size[1] / float(width))
+        print(exp.test_size[0],height,exp.test_size[1],width)
+        bboxes /= scale
+        results = []
+        for i in range(len(scores)):
+            if scores[i]>=0.05:
+                results.append(f"{image_name} {scores[i]:.2f} {bboxes[i][0]} {bboxes[i][1]} {bboxes[i][2]} {bboxes[i][3]}\n")
+        
+        f.writelines(results)  
+
+
+
 def image_demo(predictor, vis_folder, current_time, args):
     if osp.isdir(args.path):
         files = get_image_list(args.path)
@@ -184,6 +228,9 @@ def image_demo(predictor, vis_folder, current_time, args):
     tracker = BYTETracker(args, frame_rate=args.fps)
     timer = Timer()
     results = []
+    
+    if args.metric_detection != None:
+        os.makedirs(args.metric_detection, exist_ok = True)
 
     for frame_id, img_path in enumerate(files, 1):
         outputs, img_info = predictor.inference(img_path, timer)
